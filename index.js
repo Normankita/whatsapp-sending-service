@@ -9,15 +9,35 @@ const { createKey, validateKey, getAllKeys, revokeKey, deleteKey } = require('./
 // ─── CHROME PATH RESOLVER ─────────────────────────────────────────────────────
 
 function getChromePath() {
+  const { existsSync } = require('fs');
+
   if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-    console.log(`[Chrome] Using env path: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
-    return process.env.PUPPETEER_EXECUTABLE_PATH;
+    if (existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+      console.log(`[Chrome] Using env path: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+      return process.env.PUPPETEER_EXECUTABLE_PATH;
+    } else {
+      console.log(`[Chrome] Env path not found: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+    }
+  }
+
+  const systemPaths = [
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/snap/bin/chromium',
+  ];
+  for (const p of systemPaths) {
+    if (existsSync(p)) {
+      console.log(`[Chrome] Found system browser at: ${p}`);
+      return p;
+    }
   }
 
   try {
     const puppeteer = require('puppeteer');
     const p = puppeteer.executablePath();
-    if (p) {
+    if (p && existsSync(p)) {
       console.log(`[Chrome] Using puppeteer bundled: ${p}`);
       return p;
     }
@@ -25,22 +45,7 @@ function getChromePath() {
     console.log(`[Chrome] puppeteer not available: ${e.message}`);
   }
 
-  const { existsSync } = require('fs');
-  const systemPaths = [
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-    '/snap/bin/chromium',
-  ];
-  for (const p of systemPaths) {
-    if (existsSync(p)) {
-      console.log(`[Chrome] Using system Chrome: ${p}`);
-      return p;
-    }
-  }
-
-  console.log('[Chrome] No path found — letting puppeteer-core auto-detect');
+  console.log('[Chrome] No browser found — will likely fail');
   return undefined;
 }
 
@@ -105,19 +110,18 @@ function createClient() {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--disable-software-rasterizer',
         '--no-first-run',
         '--no-zygote',
-        '--single-process',
         '--disable-extensions',
         '--disable-background-networking',
         '--disable-default-apps',
         '--disable-sync',
         '--disable-translate',
         '--hide-scrollbars',
-        '--metrics-recording-only',
         '--mute-audio',
         '--safebrowsing-disable-auto-update',
+        '--ignore-certificate-errors',
+        '--ignore-ssl-errors',
       ],
     },
   });

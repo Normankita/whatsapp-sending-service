@@ -9,7 +9,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "render-build": "npm install && node -e \"require('puppeteer').executablePath()\" || npx puppeteer browsers install chrome"
+    "render-build": "npm install && npx puppeteer browsers install chrome",
+    "docker:build": "docker build -t harusi-backend .",
+    "docker:run": "docker run -p 3001:3001 harusi-backend"
   },
   "dependencies": {
     "cors": "^2.8.5",
