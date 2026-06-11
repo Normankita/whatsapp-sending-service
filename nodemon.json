@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    "keys.json",
+    ".wwebjs_auth/",
+    ".wwebjs_cache/"
+  ],
+  "watch": ["*.js", "lib/"],
+  "ext": "js"
+}
