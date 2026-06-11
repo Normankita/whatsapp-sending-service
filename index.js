@@ -105,6 +105,7 @@ function createClient() {
     puppeteer: {
       headless: true,
       executablePath: CHROME_PATH,
+      protocolTimeout: 60000,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',

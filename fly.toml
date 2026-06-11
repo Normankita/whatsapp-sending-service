@@ -13,6 +13,7 @@ primary_region = 'fra'
   PORT = '3001'
   PUPPETEER_EXECUTABLE_PATH = '/usr/bin/chromium'
   PUPPETEER_SKIP_DOWNLOAD = 'true'
+  DATA_DIR = '/app/.wwebjs_auth'
 
 [[mounts]]
   source = 'whatsapp_data'
@@ -26,7 +27,7 @@ primary_region = 'fra'
   min_machines_running = 1
 
 [[vm]]
-  memory = '512mb'
+  memory = '1024mb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 512
+  memory_mb = 1024
