@@ -3,15 +3,16 @@ set -o errexit
 
 npm install
 
-PUPPETEER_CACHE_DIR=/opt/render/.cache/puppeteer
+export PUPPETEER_CACHE_DIR=/opt/render/.cache/puppeteer
 mkdir -p $PUPPETEER_CACHE_DIR
 
+echo "Installing Chrome..."
 npx puppeteer browsers install chrome
 
-if [[ ! -d $PUPPETEER_CACHE_DIR ]]; then
-  echo "...Copying Puppeteer Cache from Build Cache"
-  cp -R /opt/render/project/src/.cache/puppeteer/chrome/ $PUPPETEER_CACHE_DIR
-else
-  echo "...Storing Puppeteer Cache in Build Cache"
-  cp -R $PUPPETEER_CACHE_DIR /opt/render/project/src/.cache/puppeteer/chrome/
-fi
+echo "Finding Chrome executable..."
+find /opt/render/.cache/puppeteer -name "chrome" -type f 2>/dev/null
+find /opt/render/.cache/puppeteer -name "chrome-linux64" -type d 2>/dev/null
+
+echo "Cache contents:"
+ls -la /opt/render/.cache/puppeteer/ 2>/dev/null || echo "Cache dir empty"
+ls -la /opt/render/.cache/puppeteer/chrome/ 2>/dev/null || echo "Chrome dir empty"
