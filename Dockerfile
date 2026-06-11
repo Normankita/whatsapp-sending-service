@@ -1,5 +1,6 @@
-FROM node:20-slim
+FROM node:22-slim
 
+# Install Chromium and dependencies
 RUN apt-get update && apt-get install -y \
   chromium \
   fonts-liberation \
@@ -41,12 +42,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package*.json ./
+
+# Tell puppeteer to skip Chrome download — we use system Chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 RUN npm install
 
 COPY . .
 
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV NODE_ENV=production
 
 EXPOSE 3001
