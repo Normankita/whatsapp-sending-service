@@ -288,4 +288,36 @@ print(resp.json())
 - A keepalive ping runs every 30 minutes to detect and recover from stale Puppeteer sessions.
 - Session progress data is purged from memory 30 minutes after completion.
 - Never commit `.wwebjs_auth/` or `.env` — both are in `.gitignore`.
-# whatsapp-sending-service
+
+---
+
+## Render Deployment
+
+### Environment Variables (set on Render dashboard)
+
+| Variable | Value |
+|---|---|
+| `PORT` | `10000` |
+| `ADMIN_PASSWORD` | your strong password |
+| `WHATSAPP_API_KEY` | your api key |
+| `ALLOWED_ORIGINS` | `https://harusi-kadi.vercel.app` |
+| `NODE_ENV` | `production` |
+| `PUPPETEER_CACHE_DIR` | `/opt/render/.cache/puppeteer` |
+| `PUPPETEER_SKIP_DOWNLOAD` | `false` |
+
+### Build Command (set on Render dashboard)
+
+```
+npm run render-build
+```
+
+### Start Command (set on Render dashboard)
+
+```
+npm start
+```
+
+### Notes
+
+- Render wipes the filesystem on every deploy, so `.wwebjs_auth/` is lost. After each deploy open `/admin` and scan the QR code to reconnect WhatsApp.
+- `keys.json` is also wiped on restart. A new API key is auto-generated and printed in the Render logs on first boot — copy it from there.
