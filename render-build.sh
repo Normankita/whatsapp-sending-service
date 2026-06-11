@@ -3,13 +3,17 @@ set -o errexit
 
 npm install
 
-echo "Installing system Chrome..."
-wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-apt-get install -y /tmp/chrome.deb 2>/dev/null || dpkg -i /tmp/chrome.deb 2>/dev/null || true
-apt-get install -f -y 2>/dev/null || true
+echo "Downloading Chrome binary directly..."
+mkdir -p /opt/render/chrome
 
-echo "Chrome location:"
-which google-chrome-stable 2>/dev/null || \
-which google-chrome 2>/dev/null || \
-ls /usr/bin/google-chrome* 2>/dev/null || \
-echo "Chrome not found in PATH"
+# Download Chrome for Linux
+wget -q "https://storage.googleapis.com/chrome-for-testing-public/120.0.6099.109/linux64/chrome-linux64.zip" \
+  -O /tmp/chrome.zip
+
+echo "Extracting Chrome..."
+unzip -q /tmp/chrome.zip -d /opt/render/chrome/
+chmod +x /opt/render/chrome/chrome-linux64/chrome
+
+echo "Verifying Chrome..."
+/opt/render/chrome/chrome-linux64/chrome --version 2>/dev/null || echo "Version check failed"
+ls -la /opt/render/chrome/chrome-linux64/chrome
