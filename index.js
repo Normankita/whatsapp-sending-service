@@ -6,6 +6,46 @@ const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { createKey, validateKey, getAllKeys, revokeKey, deleteKey } = require('./lib/keyStore');
 
+// ─── CHROME PATH RESOLVER ─────────────────────────────────────────────────────
+
+function getChromePath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    console.log(`[Chrome] Using env path: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+
+  try {
+    const puppeteer = require('puppeteer');
+    const p = puppeteer.executablePath();
+    if (p) {
+      console.log(`[Chrome] Using puppeteer bundled: ${p}`);
+      return p;
+    }
+  } catch (e) {
+    console.log(`[Chrome] puppeteer not available: ${e.message}`);
+  }
+
+  const { existsSync } = require('fs');
+  const systemPaths = [
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/snap/bin/chromium',
+  ];
+  for (const p of systemPaths) {
+    if (existsSync(p)) {
+      console.log(`[Chrome] Using system Chrome: ${p}`);
+      return p;
+    }
+  }
+
+  console.log('[Chrome] No path found — letting puppeteer-core auto-detect');
+  return undefined;
+}
+
+const CHROME_PATH = getChromePath();
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -59,7 +99,7 @@ function createClient() {
     authStrategy: new LocalAuth(),
     puppeteer: {
       headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      executablePath: CHROME_PATH,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',

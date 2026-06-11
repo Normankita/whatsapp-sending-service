@@ -1,5 +1,6 @@
 node_modules/
 .cache/
+.local-chromium/
 .wwebjs_auth/
 .wwebjs_cache/
 .env
