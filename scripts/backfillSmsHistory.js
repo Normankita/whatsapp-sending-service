@@ -23,9 +23,11 @@ function parseNextSmsDate(dateStr) {
 async function fetchAllLogs() {
   const allLogs = [];
   let offset = 0;
-  const limit = 500;
+  const limit = 200; // NextSMS appears to cap pages at 200 regardless of requested limit
+  const MAX_PAGES = 50; // safety cap: up to 10,000 logs
+  let page = 0;
 
-  while (true) {
+  while (page < MAX_PAGES) {
     const url = `${BASE_URL}/api/v2/logs?limit=${limit}&offset=${offset}`;
     const res = await fetch(url, {
       headers: {
@@ -35,7 +37,7 @@ async function fetchAllLogs() {
     });
 
     if (!res.ok) {
-      console.error(`Failed to fetch logs: HTTP ${res.status}`);
+      console.error(`Failed to fetch logs page ${page}: HTTP ${res.status}`);
       const body = await res.text().catch(() => '');
       console.error(body);
       break;
@@ -44,14 +46,23 @@ async function fetchAllLogs() {
     const data = await res.json();
     const results = data?.results || [];
 
-    if (results.length === 0) break;
+    console.log(`Page ${page + 1}: fetched ${results.length} logs (offset ${offset})`);
+
+    if (results.length === 0) {
+      console.log('Reached end of logs (empty page).');
+      break;
+    }
 
     allLogs.push(...results);
-    offset += limit;
+    offset += results.length; // advance by actual count received, not assumed limit
+    page++;
 
-    console.log(`Fetched ${allLogs.length} logs so far...`);
+    // Small delay to be polite to the API
+    await new Promise(r => setTimeout(r, 300));
+  }
 
-    if (results.length < limit) break; // last page reached
+  if (page >= MAX_PAGES) {
+    console.warn(`Warning: Hit MAX_PAGES safety cap (${MAX_PAGES}). There may be more logs not fetched.`);
   }
 
   return allLogs;
@@ -141,14 +152,14 @@ async function run() {
     console.log('No existing sms-batches.json found, creating new one.');
   }
 
-  const alreadyImported = existing.batches.some((b) => b.imported);
-  if (alreadyImported) {
-    console.log('Warning: Imported batches already exist.');
-    console.log('Delete them from sms-batches.json first if you want to re-run this.');
-    return;
+  const previousImportedCount = existing.batches.filter(b => b.imported).length;
+  if (previousImportedCount > 0) {
+    console.log(`Removing ${previousImportedCount} previously imported batch(es) before re-importing fresh data...`);
   }
 
-  existing.batches = [...importedBatches, ...existing.batches];
+  // Keep only batches that were NOT imported (live, real sends made through the app)
+  const liveBatches = existing.batches.filter(b => !b.imported);
+  existing.batches = [...importedBatches, ...liveBatches];
   existing.batches.sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
