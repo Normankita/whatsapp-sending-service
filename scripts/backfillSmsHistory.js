@@ -12,6 +12,14 @@ function getAuthHeader() {
   return `Bearer ${NEXTSMS_TOKEN}`;
 }
 
+function parseNextSmsDate(dateStr) {
+  if (!dateStr) return new Date();
+  // NextSMS returns "YYYY-MM-DD HH:mm:ss" — convert to ISO-like so Date() parses it reliably
+  const isoLike = dateStr.replace(' ', 'T');
+  const parsed = new Date(isoLike);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 async function fetchAllLogs() {
   const allLogs = [];
   let offset = 0;
@@ -36,10 +44,6 @@ async function fetchAllLogs() {
     const data = await res.json();
     const results = data?.results || [];
 
-    if (allLogs.length === 0 && results.length > 0) {
-      console.log('Sample log entry:', JSON.stringify(results[0], null, 2));
-    }
-
     if (results.length === 0) break;
 
     allLogs.push(...results);
@@ -54,23 +58,23 @@ async function fetchAllLogs() {
 }
 
 function groupLogsByBatch(logs) {
-  // Group by: same sender + same message text + sent within 30 minutes of each other
+  // Group by: same sender + sent within 30 minutes of each other
   const sorted = [...logs].sort(
-    (a, b) => new Date(a.sentDate || a.date) - new Date(b.sentDate || b.date)
+    (a, b) => parseNextSmsDate(a.sentAt) - parseNextSmsDate(b.sentAt)
   );
 
   const batches = [];
   let currentBatch = null;
 
+  const messageText = '[Maudhui ya ujumbe hayapo kwenye historia ya NextSMS]';
+
   for (const log of sorted) {
-    const sentAt = new Date(log.sentDate || log.date);
-    const messageText = log.text || log.message || '';
-    const sender = log.from || log.sender || 'UNKNOWN';
+    const sentAt = parseNextSmsDate(log.sentAt);
+    const sender = log.from || 'UNKNOWN';
 
     const shouldStartNewBatch =
       !currentBatch ||
       currentBatch.senderId !== sender ||
-      currentBatch.messageTemplate !== messageText ||
       sentAt - new Date(currentBatch.lastSeenAt) > 30 * 60 * 1000;
 
     if (shouldStartNewBatch) {
@@ -87,18 +91,17 @@ function groupLogsByBatch(logs) {
       };
     }
 
+    const statusName = (log.status?.name || log.status?.groupName || log.delivery || '').toUpperCase();
+
     currentBatch.lastSeenAt = sentAt.toISOString();
     currentBatch.recipients.push({
       name: log.to || 'Unknown',
       phone: log.to || '',
       message: messageText,
-      status: ['DELIVERED', 'SENT', 'ACCEPTED'].includes(
-        (log.status || '').toUpperCase()
-      )
-        ? 'sent'
-        : 'failed',
-      reason: log.status || null,
+      status: ['DELIVERED', 'SENT', 'ACCEPTED'].includes(statusName) ? 'sent' : 'failed',
+      reason: log.status?.name || log.delivery || null,
       messageId: log.messageId || null,
+      smsCount: log.smsCount || 1,
     });
   }
 
