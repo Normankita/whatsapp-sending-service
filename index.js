@@ -633,7 +633,21 @@ app.get('/progress/:sessionId', (req, res) => {
 // ─── SMS BATCH ROUTES ─────────────────────────────────────────────────────────
 
 app.get('/sms/batches', (_req, res) => {
-  res.json({ batches: getAllBatches() });
+  const batches = getAllBatches().map(({ id }) => {
+    const b = getBatchById(id);
+    const recipients = b.recipients || [];
+    return {
+      id: b.id,
+      createdAt: b.createdAt,
+      cardType: b.cardType || null,
+      senderId: b.senderId || null,
+      totalContacts: b.totalContacts ?? recipients.length,
+      sentCount: b.sentCount ?? recipients.filter(r => r.status === 'sent').length,
+      failedCount: b.failedCount ?? recipients.filter(r => r.status === 'failed').length,
+      imported: b.imported || false,
+    };
+  });
+  res.json({ batches });
 });
 
 app.get('/sms/batches/:id', (req, res) => {
