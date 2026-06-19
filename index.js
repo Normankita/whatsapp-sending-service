@@ -5,6 +5,7 @@ const qrcode = require('qrcode');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { createKey, validateKey, getAllKeys, revokeKey, deleteKey } = require('./lib/keyStore');
+const { createBatch, getAllBatches, getBatchById, updateBatchMessage, updateRecipientStatuses } = require('./lib/smsBatchStore');
 
 // ─── CHROME PATH RESOLVER ─────────────────────────────────────────────────────
 
@@ -58,7 +59,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'DELETE'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: [
     'Content-Type',
     'x-api-key',
@@ -627,6 +628,36 @@ app.get('/progress/:sessionId', (req, res) => {
     done: session.done,
     errors: session.errors,
   });
+});
+
+// ─── SMS BATCH ROUTES ─────────────────────────────────────────────────────────
+
+app.get('/sms/batches', (_req, res) => {
+  res.json({ batches: getAllBatches() });
+});
+
+app.get('/sms/batches/:id', (req, res) => {
+  const batch = getBatchById(req.params.id);
+  if (!batch) return res.status(404).json({ success: false, error: 'Batch not found' });
+  res.json(batch);
+});
+
+app.patch('/sms/batches/:id/message', (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ success: false, error: 'message is required' });
+  const batch = updateBatchMessage(req.params.id, message);
+  if (!batch) return res.status(404).json({ success: false, error: 'Batch not found' });
+  res.json({ success: true, batch });
+});
+
+app.post('/sms/batches', (req, res) => {
+  const { message, recipients } = req.body;
+  if (!message) return res.status(400).json({ success: false, error: 'message is required' });
+  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+    return res.status(400).json({ success: false, error: 'recipients array is required and must not be empty' });
+  }
+  const batch = createBatch({ message, recipients });
+  res.status(201).json({ success: true, batch });
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────
