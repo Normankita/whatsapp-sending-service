@@ -36,6 +36,10 @@ async function fetchAllLogs() {
     const data = await res.json();
     const results = data?.results || [];
 
+    if (allLogs.length === 0 && results.length > 0) {
+      console.log('Sample log entry:', JSON.stringify(results[0], null, 2));
+    }
+
     if (results.length === 0) break;
 
     allLogs.push(...results);
