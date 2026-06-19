@@ -5,7 +5,7 @@ const qrcode = require('qrcode');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { createKey, validateKey, getAllKeys, revokeKey, deleteKey } = require('./lib/keyStore');
-const { createBatch, getAllBatches, getBatchById, updateBatchMessage, updateRecipientStatuses, getNeverDeliveredRecipients, getAllKnownPhones } = require('./lib/smsBatchStore');
+const { createBatch, getAllBatches, getBatchById, updateBatchMessage, updateRecipientStatuses, getNeverDeliveredRecipients, getAllKnownPhones, getStatusForPhones } = require('./lib/smsBatchStore');
 
 // ─── CHROME PATH RESOLVER ─────────────────────────────────────────────────────
 
@@ -672,6 +672,15 @@ app.get('/sms/recipients/never-delivered', (_req, res) => {
 app.get('/sms/recipients/known-phones', (_req, res) => {
   const phones = getAllKnownPhones();
   res.json({ phones, total: phones.length });
+});
+
+app.post('/sms/recipients/status-lookup', (req, res) => {
+  const { phones } = req.body;
+  if (!phones || !Array.isArray(phones)) {
+    return res.status(400).json({ error: 'phones array is required' });
+  }
+  const results = getStatusForPhones(phones);
+  res.json({ results });
 });
 
 app.post('/sms/batches', (req, res) => {
