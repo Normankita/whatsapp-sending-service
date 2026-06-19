@@ -5,7 +5,7 @@ const qrcode = require('qrcode');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { createKey, validateKey, getAllKeys, revokeKey, deleteKey } = require('./lib/keyStore');
-const { createBatch, getAllBatches, getBatchById, updateBatchMessage, updateRecipientStatuses } = require('./lib/smsBatchStore');
+const { createBatch, getAllBatches, getBatchById, updateBatchMessage, updateRecipientStatuses, getNeverDeliveredRecipients } = require('./lib/smsBatchStore');
 
 // ─── CHROME PATH RESOLVER ─────────────────────────────────────────────────────
 
@@ -662,6 +662,11 @@ app.patch('/sms/batches/:id/message', (req, res) => {
   const batch = updateBatchMessage(req.params.id, message);
   if (!batch) return res.status(404).json({ success: false, error: 'Batch not found' });
   res.json({ success: true, batch });
+});
+
+app.get('/sms/recipients/never-delivered', (_req, res) => {
+  const result = getNeverDeliveredRecipients();
+  res.json(result);
 });
 
 app.post('/sms/batches', (req, res) => {
