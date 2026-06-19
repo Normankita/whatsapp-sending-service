@@ -11,7 +11,8 @@
     "dev": "nodemon index.js",
     "render-build": "npm install && npx puppeteer browsers install chrome",
     "docker:build": "docker build -t harusi-backend .",
-    "docker:run": "docker run -p 3001:3001 harusi-backend"
+    "docker:run": "docker run -p 3001:3001 harusi-backend",
+    "backfill-sms": "node scripts/backfillSmsHistory.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
